@@ -58,7 +58,7 @@ func main() {
 				break
 			}
 
-			if objects[obj+1] > users[user] {
+			if objects[obj-1] > users[user] {
 				color.Red("Access denied")
 				continue
 			}
