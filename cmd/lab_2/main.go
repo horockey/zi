@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 
 	"github.com/fatih/color"
 )
@@ -80,7 +81,7 @@ func main() {
 
 			fmt.Println("Enter object number:")
 			var objNumber int
-			_, err := fmt.Scanln(&objNumber)
+			_, err := fmt.Scan(&objNumber)
 			if err != nil || objNumber <= 0 || objNumber > objectsCount {
 				color.Red("Bad object number: %s\n", err)
 				continue
@@ -97,12 +98,21 @@ func main() {
 					continue
 				}
 				color.Green("Access granted")
+				data, err := os.ReadFile(fmt.Sprintf("%d.txt", objNumber))
+				if err != nil {
+					data = []byte{}
+				}
+				fmt.Println(string(data))
 			case "W":
 				if !privs[user][objNumber].canWrite() {
 					color.Red("Access denied")
 					continue
 				}
 				color.Green("Access granted")
+				fmt.Print("Enter data: ")
+				var data string
+				fmt.Scan(&data)
+				os.WriteFile(fmt.Sprintf("%d.txt", objNumber), []byte(data), os.ModePerm)
 			case "G":
 				if !privs[user][objNumber].canGrant() {
 					color.Red("Access denied")

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 
 	"github.com/fatih/color"
 )
@@ -33,6 +34,7 @@ func main() {
 		uname := fmt.Sprintf("user_%d", i+1)
 		users[uname] = AccessLevel(rand.Intn(3) + 1)
 	}
+	users["admin"] = AccessLevelTopSecret
 
 	for {
 		printAccessLevels(users, objects)
@@ -58,12 +60,35 @@ func main() {
 				break
 			}
 
-			if objects[obj-1] > users[user] {
-				color.Red("Access denied")
+			fmt.Println("Enter action: ")
+			action := ""
+			fmt.Scan(&action)
+			switch action {
+			default:
+				color.Red("Unknown action")
 				continue
+			case "R":
+				if objects[obj-1] > users[user] {
+					color.Red("Access denied")
+					continue
+				}
+				color.Green("Access granted")
+				data, err := os.ReadFile(fmt.Sprintf("%d.txt", obj))
+				if err != nil {
+					data = []byte{}
+				}
+				fmt.Println(string(data))
+			case "W":
+				if objects[obj-1] < users[user] {
+					color.Red("Access denied")
+					continue
+				}
+				color.Green("Access granted")
+				fmt.Print("Enter data: ")
+				var data string
+				fmt.Scan(&data)
+				os.WriteFile(fmt.Sprintf("%d.txt", obj), []byte(data), os.ModePerm)
 			}
-
-			color.Green("Access granted")
 		}
 	}
 }
