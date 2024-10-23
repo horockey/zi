@@ -1,3 +1,7 @@
+github.com/AllenDang/gform v0.0.0-20130830051017-6bb9f0d6b77e h1:ydyNRilv6v0XpkJ5bHCXdRpfLt/Tr/Rr3EkcX3kmzbY=
+github.com/AllenDang/gform v0.0.0-20130830051017-6bb9f0d6b77e/go.mod h1:Xw5E2XAXNKUG16G8mFPJ2UipVEnkiBcr2ak7H3Az238=
+github.com/AllenDang/w32 v0.0.0-20180428130237-ad0a36d80adc h1:w3fW4b1hPf6/cfdQQ/vu9V8eBeQmuLZIaUMj81nIzYQ=
+github.com/AllenDang/w32 v0.0.0-20180428130237-ad0a36d80adc/go.mod h1:1rHKulT5eD2DzdKxDXUZRKtBfkTzLmTL42ZmEmOfyrs=
 github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203 h1:XBBHcIb256gUJtLmY22n99HaZTz+r2Z51xUPi01m3wg=
 github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203/go.mod h1:E1jcSv8FaEny+OP/5k9UxZVw9YFWGj7eI4KR/iOBqCg=
 github.com/fatih/color v1.17.0 h1:GlRw1BRJxkpqUCBKzKOw098ed57fEsKeNjpTe3cSjK4=
