@@ -53,9 +53,16 @@ func main() {
 	color.Blue("%s\n", phrase)
 
 	strokes := make([]time.Duration, 0, len(phrase)-1)
+	strokesCh, err := kb.GetKeys(len(phrase))
+	if err != nil {
+		panic(fmt.Errorf("creating strokes chan: %w", err))
+	}
 	var lastStrokeTsMs int64 = 0
-	for i := 0; i < len(phrase); i++ {
-		ch, key, err := kb.GetSingleKey()
+	i := 0
+	for ev := range strokesCh {
+		ch := ev.Rune
+		key := ev.Key
+		err := ev.Err
 		if err != nil {
 			panic(fmt.Errorf("getting key from KB: %w", err))
 		}
@@ -63,7 +70,7 @@ func main() {
 			ch = ' '
 		}
 		fmt.Print(string(ch))
-		if byte(ch) != phrase[i] {
+		if ch != rune(phrase[i]) {
 			color.Red("Typing error")
 			return
 		}
@@ -72,6 +79,10 @@ func main() {
 			strokes = append(strokes, time.Duration(now-lastStrokeTsMs)*time.Millisecond)
 		}
 		lastStrokeTsMs = now
+		i++
+		if i == len(phrase) {
+			break
+		}
 	}
 	fmt.Println()
 
@@ -95,16 +106,11 @@ func main() {
 
 	color.Green("Logged in")
 
-	strokeCh, err := kb.GetKeys(10_000)
-	if err != nil {
-		panic(fmt.Errorf("creating strokes channel: %w", err))
-	}
-
 	logoutDur := time.Duration(cfg.LogoutTimeoutSec) * time.Second
 	ticker := time.NewTicker(logoutDur)
 	for {
 		select {
-		case ev := <-strokeCh:
+		case ev := <-strokesCh:
 			ticker.Reset(logoutDur)
 			fmt.Print(string(ev.Rune))
 		case <-ticker.C:
