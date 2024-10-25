@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strings"
 	"time"
 
 	kb "github.com/eiannone/keyboard"
@@ -50,6 +51,7 @@ func main() {
 	}
 
 	phrase := phrases[rand.Intn(len(phrases))]
+	phrase = strings.TrimSpace(phrase)
 	color.Blue("%s\n", phrase)
 
 	strokes := make([]time.Duration, 0, len(phrase)-1)

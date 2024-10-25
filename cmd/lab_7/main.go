@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/samber/lo"
@@ -15,6 +17,9 @@ import (
 
 //go:embed creds.json
 var credsData []byte
+
+//go:embed locks.json
+var locksData []byte
 
 const (
 	xivl = 10
@@ -30,8 +35,9 @@ type Coord struct {
 }
 
 var (
-	lastBtnRow = -1
-	lastBtnCol = -1
+	lastBtnRow   = -1
+	lastBtnCol   = -1
+	failedInputs = 0
 
 	path = Path{}
 )
@@ -39,6 +45,11 @@ var (
 func main() {
 	patterns := map[string]Path{}
 	if err := json.Unmarshal(credsData, &patterns); err != nil {
+		panic(fmt.Errorf("loading creds: %w", err))
+	}
+
+	locks := []Lock{}
+	if err := json.Unmarshal(locksData, &locks); err != nil {
 		panic(fmt.Errorf("loading creds: %w", err))
 	}
 
@@ -136,14 +147,73 @@ func main() {
 			color.Red("No such user")
 			return
 		}
+		activeLocks := lo.Filter(locks, func(el Lock, _ int) bool {
+			if el.User != uname || el.UntilUnix < time.Now().Unix() {
+				return false
+			}
+			return true
+		})
+		if len(activeLocks) > 0 {
+			color.Red("User %s is blocked until %s", uname, time.Unix(activeLocks[0].UntilUnix, 0).Format(time.DateTime))
+			return
+		}
 		if !p.Matches(path) {
 			color.Red("Bad pattern")
+			failedInputs++
+			if failedInputs >= 3 {
+				locks = append(locks, Lock{User: uname, UntilUnix: time.Now().Unix() + 15})
+				color.Red("User %s blocked for 15s", uname)
+			}
 			return
 		}
 		color.Green("Access granted")
+		failedInputs = 0
 	})
 
-	mainForm.OnClose().Bind(func(arg *winc.Event) { winc.Exit() })
+	registerButton := winc.NewPushButton(mainForm)
+	registerButton.SetText("REGISTER")
+	registerButton.SetSize(200, 50)
+	registerButton.SetPos(xivl*2+loginButton.ClientWidth(), mainForm.ClientHeight()-loginButton.ClientHeight()-yivl)
+	registerButton.OnClick().Bind(func(arg *winc.Event) {
+		defer func() {
+			path = Path{}
+			lastBtnRow = -1
+			lastBtnCol = -1
+			for i := 0; i < len(cvs); i++ {
+				for j := 0; j < len(cvs[i]); j++ {
+					cvs[i][j].SetText(fmt.Sprintf("%d/%d", i, j))
+				}
+			}
+		}()
+
+		uname := loginTextBox.Text()
+		if uname == "" {
+			return
+		}
+
+		patterns[uname] = path
+		data, err := json.MarshalIndent(patterns, "", "\t")
+		if err != nil {
+			panic(fmt.Errorf("marshaling patterns: %w", err))
+		}
+		if err := os.WriteFile("creds.json", data, os.ModePerm); err != nil {
+			panic(fmt.Errorf("writing creds to file: %w", err))
+		}
+
+		pstr := strings.Join(lo.Map(path, func(el Coord, _ int) string { return fmt.Sprintf("{%d, %d}", el.X, el.Y) }), ", ")
+		fmt.Printf("User %s regitered with pattern %s\n", uname, pstr)
+	})
+
+	mainForm.OnClose().Bind(func(arg *winc.Event) {
+		data, err := json.MarshalIndent(locks, "", "\t")
+		if err != nil {
+			panic(fmt.Errorf("marshaling locks: %w", err))
+		}
+		if err := os.WriteFile("locks.json", data, os.ModePerm); err != nil {
+			panic(fmt.Errorf("writing file: %w", err))
+		}
+		winc.Exit()
+	})
 	mainForm.Center()
 	mainForm.Show()
 	winc.RunMainLoop()
